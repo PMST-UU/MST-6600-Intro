@@ -1,0 +1,174 @@
+---
+title: "Week One In-class Exercise"
+output: html_notebook
+---
+
+# Anscombe Data Set
+
+The Anscombe data set is indroduced in the *NIST Engineering and Statistics Handbook* to demonstrate the value of Exporatory Data Analysis (EDA)
+
+```{r}
+
+library(readxl)
+Anscombe <- read_excel("~/Google Drive/UU PMST/MST 6600 - Advanced Statistical Techniques/NIST Engineering Statistics Handbook 1-1-6 EDA Graphics Example/data/Anscombe.xlsx")
+```
+Although this looks like a lot of code, it was generated using the **Import Dataset** dropdown box.
+
+We can view the data in the concole, "viewer, " or in the table below:
+
+```{r}
+Anscombe
+```
+
+
+***
+
+## What's intersting about this data set?
+
+Given we have a set of X and Y pairs, we may assume that data should be grouped together; a normal, *non-graphical* analysis would be to preform a linear regression on the data.
+
+```{r}
+xy1.linear.model <- lm(Anscombe$Y1 ~ Anscombe$X1)
+summary(xy1.linear.model)
+```
+
+I might even plot the data (adding the linear regression line from above):
+```{r}
+plot(Anscombe$X1, Anscombe$Y1)
+abline(xy1.linear.model)
+```
+
+### Create summaries of the other XY pairs
+
+```{r}
+xy2.linear.model <- lm(Anscombe$Y2 ~ Anscombe$X2)
+xy3.linear.model <- lm(Anscombe$Y3 ~ Anscombe$X3)
+xy4.linear.model <- lm(Anscombe$Y4 ~ Anscombe$X4)
+```
+
+```{r}
+summary(xy2.linear.model)
+summary(xy3.linear.model)
+summary(xy4.linear.model)
+```
+
+### Let's look at all the data graphically
+
+```{r}
+# create a single page of all values
+par(mfrow=c(2,2)) # Change the panel layout to 2 x 2
+plot(Anscombe$X1, Anscombe$Y1)
+abline(xy1.linear.model)
+
+plot(Anscombe$X2, Anscombe$Y2)
+abline(xy2.linear.model)
+
+plot(Anscombe$X3, Anscombe$Y3)
+abline(xy3.linear.model)
+
+plot(Anscombe$X4, Anscombe$Y4)
+abline(xy4.linear.model)
+
+par(mfrow=c(1,1)) # Change back to 1 x 1
+```
+
+### Let's make one of the graphs "pretty"
+```{r}
+# Making changes to graphs
+# create a simple scatter plot of X1 vs Y1 with some lables
+plot(Anscombe$X1, Anscombe$Y1, main="DATA SET 1", xlab="X1", ylab="Y1")
+abline(xy1.linear.model)
+```
+
+### What else do I get with R?
+```{r}
+plot(Anscombe$X1, resid(xy1.linear.model))
+abline(h = 0)
+
+plot(Anscombe$X2, resid(xy2.linear.model))
+abline(h = 0)
+```
+***
+
+# A Look Ahead
+The code above uses *base R* commands. While they can be used to create clean, accurate graphs, it requires the user to **know** many different commands and structures.
+
+Over the last 10-years, several new R packages have been created to make analysis and graphics easier. This course will primarily exploit two of those packages: *tidyverse* and *ggplot2*.
+
+## Example 2. The Anscombe dataset with ggplot2
+I need to tidy up the data:
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+Anscombe.tidy.xy1 <- Anscombe %>% select("X1", "Y1") %>%
+  mutate(dataset = "DataSet1") %>%
+  rename(X = X1, Y = Y1)
+
+Anscombe.tidy.xy2 <- Anscombe %>% select("X2", "Y2") %>%
+  mutate(dataset = "DataSet2") %>%
+  rename(X = X2, Y = Y2)
+
+Anscombe.tidy.xy3 <- Anscombe %>% select("X3", "Y3") %>%
+  mutate(dataset = "DataSet3") %>%
+  rename(X = X3, Y = Y3)
+
+Anscombe.tidy.xy4 <- Anscombe %>% select("X4", "Y4") %>%
+  mutate(dataset = "DataSet4") %>%
+  rename(X = X4, Y = Y4)
+```
+We can look at the output of the first data set:
+```{r}
+Anscombe.tidy.xy1
+```
+
+In order to fully complete the analysis, we need to put all for *datasets* together:
+
+```{r}
+Anscombe.tidy.data <- 
+  bind_rows(Anscombe.tidy.xy1, Anscombe.tidy.xy2, Anscombe.tidy.xy3, Anscombe.tidy.xy4)
+```
+
+The new dataset is "tidy."
+```{r}
+Anscombe.tidy.data
+```
+
+## The POWER of ggplot2
+
+```{r}
+Anscombe.tidy.data %>% 
+  ggplot(aes(X, Y)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  facet_wrap(~ dataset) +
+  theme_bw()
+```
+
+
+## Modeling is easier as well...
+```{r}
+# modeling the data for DataSet1 through DataSet4 
+xy1.lm <- Anscombe.tidy.data %>% 
+  filter(dataset == "DataSet1") %>% lm(Y ~ X, .)
+#plot(xy1.lm)
+summary(xy1.lm)
+
+xy2.lm <- Anscombe.tidy.data %>% 
+  filter(dataset == "DataSet2") %>% lm(Y ~ X, .)
+#plot(xy2.lm)
+summary(xy2.lm)
+
+xy3.lm <- Anscombe.tidy.data %>% 
+  filter(dataset == "DataSet3") %>% lm(Y ~ X, .)
+#plot(xy3.lm)
+summary(xy3.lm)
+
+xy4.lm <- Anscombe.tidy.data %>% 
+  filter(dataset == "DataSet4") %>% lm(Y ~ X, .)
+#plot(xy4.lm)
+summary(xy4.lm)
+
+```
